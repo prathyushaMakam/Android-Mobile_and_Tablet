@@ -5,14 +5,32 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.prathyusha.multipaneapp.DetailFragment">
 
+    <ImageView
+        android:layout_width="300dp"
+        android:layout_height="200dp"
+        android:id="@+id/PotholeImage"
+        android:background="@drawable/camera_image"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:id="@+id/PhotoInfoText"
+        android:text="Description about Pothole: "
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/PotholeImage"
+        android:layout_marginTop="30dp"
+        android:textSize="20dp"
+        android:textColor="#000"
+        android:textStyle="bold" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:id="@+id/pothole_detail"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginLeft="@dimen/activity_horizontal_margin"
-        android:layout_marginRight="@dimen/activity_horizontal_margin"
-        android:gravity="center"/>
+        android:layout_marginTop="20dp"
+        android:layout_below="@+id/PhotoInfoText"
+        android:textColor="#000"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
 </RelativeLayout>

@@ -1,12 +1,26 @@
 package com.prathyusha.multipaneapp;
 
-import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageRequest;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class DetailFragment extends Fragment {
@@ -14,8 +28,14 @@ public class DetailFragment extends Fragment {
     final static String KEY_POSITION = "position";
     static int mCurrentPosition = -1;
 
-    static String[] mPotholeDetail;
-    static TextView mPotholeDetailTextView;
+    private static String mPotholeUserId;
+    private static String mPotholeDescription;
+    private static String mImageType;
+
+    private static String tag ="DetailFragment";
+    private int mItemId = DetailFragmentActivity.mItemId ;
+    static TextView mPotholeDetailTextView ;
+    private static ImageView mPotholeImage;
 
 
     public DetailFragment() {
@@ -29,14 +49,6 @@ public class DetailFragment extends Fragment {
     }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-        mPotholeDetail = getResources().getStringArray(R.array.version_descriptions);
-    }
-
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
@@ -48,7 +60,14 @@ public class DetailFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_detail, container, false);
 
         mPotholeDetailTextView = (TextView) view.findViewById(R.id.pothole_detail);
+        mPotholeImage = (ImageView) view.findViewById(R.id.PotholeImage);
         return view;
+
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
 
     }
 
@@ -70,29 +89,94 @@ public class DetailFragment extends Fragment {
         }
     }
 
-    public static void setDetails(int detailIndex){
-        mPotholeDetailTextView.setText(mPotholeDetail[detailIndex]);
+    public  void setDetails(final Integer detailIndex) {
+
         mCurrentPosition = detailIndex;
+
+        Log.d(tag, "pothole Index value:" + detailIndex);
+
+
+        RequestQueue requestQueue= Volley.newRequestQueue(getActivity().getApplicationContext());
+        //  Create json array request
+        Log.d(tag, "After Json requestQueue");
+        JsonArrayRequest jsonArrayRequest=new JsonArrayRequest(Request.Method.POST, "http://bismarck.sdsu.edu/city/batch?type=street&user=rew&size=10&batch-number=0&end-id=15",new Response.Listener<JSONArray>(){
+            public void onResponse(JSONArray jsonArray){
+                Log.d(tag,"Inside onResponse");
+
+                // Successfully download json
+                // So parse it and populate the listview
+                try {
+                    JSONObject Id = jsonArray.getJSONObject(detailIndex);
+                    JSONObject Description=jsonArray.getJSONObject(detailIndex);
+                    JSONObject ImageType=jsonArray.getJSONObject(detailIndex);
+
+                    Log.d(tag, "After Json Object declaration");
+
+
+                    mPotholeUserId = Id.getString("id");
+                    mPotholeDescription=Description.getString("description");
+                    mImageType = ImageType.getString("imagetype");
+
+                    Log.d(tag, "After getting potholeUserId:" + mPotholeUserId + " :Description :" + mPotholeDescription +" :ImageType :"+ mImageType);
+
+                    mPotholeDetailTextView.setText(mPotholeDescription);
+
+                    if(!mImageType.equals("none") )
+                    {
+                        Log.d(tag,"Image type is not None");
+                        DisplayImage();
+                    }
+                    Log.d(tag, "mPotholeIdValue[" + detailIndex + "]= "+ mPotholeUserId);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            // }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+                Log.e("Error", "Unable to parse json array");
+            }
+        });
+        // add json array request to the request queue
+        requestQueue.add(jsonArrayRequest);
     }
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
+    public void DisplayImage() {
+        Response.Listener<Bitmap> success = new Response.Listener<Bitmap>() {
+            public void onResponse(Bitmap response) {
+                 mPotholeImage.setImageBitmap(response);
 
-        // Save the current description selection in case we need to recreate the fragment
-        outState.putInt(KEY_POSITION,mCurrentPosition);
+            }
+        };
+        Response.ErrorListener failure = new Response.ErrorListener() {
+            public void onErrorResponse(VolleyError error) {
+                Log.d("rew", error.toString());
+            }
+        };
+        String url = "http://bismarck.sdsu.edu/city/image?id="+mPotholeUserId;
+        ImageRequest ir = new ImageRequest(url,
+                success, 0, 0, ImageView.ScaleType.CENTER_INSIDE, null, failure);
+        RequestQueue queue = Volley.newRequestQueue(getActivity().getApplicationContext());
+        queue.add(ir);
     }
 
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
 
-    }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-    }
+        @Override
+        public void onSaveInstanceState (Bundle outState){
+            super.onSaveInstanceState(outState);
+
+            // Save the current description selection in case we need to recreate the fragment
+            outState.putInt(KEY_POSITION, mCurrentPosition);
+        }
+
+        @Override
+        public void onDetach () {
+            super.onDetach();
+        }
 
 
 }
